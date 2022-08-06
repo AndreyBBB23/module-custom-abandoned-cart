@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<modification>
+    <name>Custom Abandoned Cart</name>
+    <code>default</code>
+    <version>1.0</version>
+    <author>Andrei Biareshchanka</author>
+    <link>https://www.linkedin.com/in/andrei-biareshchanka-90282919a/</link>
+    <file path="admin/model/localisation/order_status.php">
+        <operation>
+            <search>
+                <![CDATA[
+                    $sql .= " ORDER BY name";
+                ]]>
+            </search>
+            <add position="before">
+                <![CDATA[
+                    if (!empty($data['filter_name'])) {
+                        $sql .= " AND name LIKE '%" . $this->db->escape($data['filter_name']) . "%'";
+                    }
+                ]]>
+            </add>
+        </operation>
+    </file>
+    <file path="catalog/controller/checkout/checkout.php">
+        <operation>
+            <search>
+                <![CDATA[
+                    $order_data['comment'] .= 'Comment: ' . $this->request->post['comment'];
+                ]]>
+            </search>
+            <add position="before">
+                <![CDATA[
+                    // ДОБАВЛЕНИЕ В ЗАКАЗ ДАННЫХ CHARACTER SERVER (если такое поле есть)
+                    $order_data['character_server'] = isset($this->request->post['toComment']['Character server']) ? $this->request->post['toComment']['Character server'] : "";
+                ]]>
+            </add>
+        </operation>
+    </file>
+    <file path="catalog/model/checkout/order.php">
+        <operation>
+            <search>
+                <![CDATA[
+                    return $order_id;
+                ]]>
+            </search>
+            <add position="before">
+                <![CDATA[
+                    $this->addCustomAbandonedCart($data, $order_id);
+                ]]>
+            </add>
+        </operation>
+        <operation>
+            <search>
+                <![CDATA[
+                    public function editOrder($order_id, $data) {
+                ]]>
+            </search>
+            <add position="before">
+                <![CDATA[
+                    public function addCustomAbandonedCart($data, $cart_id)
+                    {
+                        $this->db->query("INSERT INTO `" . DB_PREFIX . "custom_abandoned_cart` SET cart_id = '" . (int)$cart_id . "', user_session_id = '" . $this->db->escape($this->session->getId()) . "', date_added = NOW()");
+
+                        $id = $this->db->getLastId();
+
+                        // Добавление данных Email к брошенной корзине
+                        if(isset($data['email'])) {
+                            $this->db->query("UPDATE " . DB_PREFIX . "custom_abandoned_cart SET email = '" . $this->db->escape($data['email']) . "' WHERE abandoned_cart_id = '" . $id . "'");
+                        }
+
+                        // Добавление данных Discord к брошенной корзине
+                        if(isset($data['discord'])) {
+                            $this->db->query("UPDATE " . DB_PREFIX . "custom_abandoned_cart SET discord = '" . $this->db->escape($data['discord']) . "' WHERE abandoned_cart_id = '" . $id . "'");
+                        }
+
+                        // Добавление данных Character name к брошенной корзине
+                        if(isset($data['character_name'])) {
+                            $this->db->query("UPDATE " . DB_PREFIX . "custom_abandoned_cart SET character_name = '" . $this->db->escape($data['character_name']) . "' WHERE abandoned_cart_id = '" . $id . "'");
+                        }
+
+                        // Добавление данных Character server к брошенной корзине
+                        if(isset($data['character_server'])) {
+                            $this->db->query("UPDATE " . DB_PREFIX . "custom_abandoned_cart SET character_server = '" . $this->db->escape($data['character_server']) . "' WHERE abandoned_cart_id = '" . $id . "'");
+                        }
+
+                        return $id;
+                    }
+                ]]>
+            </add>
+        </operation>
+    </file>
+</modification>
