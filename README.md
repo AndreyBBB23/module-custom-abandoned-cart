@@ -7,3 +7,5 @@ Opportunities:
 * Tracking an abandoned cart
 * Analytics
 * Sending emails
+
+**Contact me by email: bereschenko96@yandex.by**
